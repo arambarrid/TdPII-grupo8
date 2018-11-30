@@ -28,8 +28,10 @@ and that both those copyright notices and this permission notice appear in suppo
 **************************************************************************************************/
 #define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
 #include "MQ135.h"
-#include "WiFiEsp.h"
-
+#include <WiFiEsp.h>
+#include <WiFiEspClient.h>
+#include <WiFiEspUdp.h>
+#include <PubSubClient.h>
 // Emulate Serial1 on pins 3/2 if not present
 #ifndef HAVE_HWSERIAL1
 #include "SoftwareSerial.h"
@@ -41,12 +43,29 @@ char pass[] = "223530145522";        // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 char server[] = "192.168.0.3";
-
+boolean http;
 // Initialize the Ethernet client object
 WiFiEspClient client;
+WiFiEspClient espClient;
+
 #define ANALOGPIN A1
 
+void callback(char* topic, byte* payload, unsigned int length) {
+ 
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+ 
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+ 
+  Serial.println();
+  Serial.println("-----------------------");
+ 
+}
 
+PubSubClient mqttClient(espClient);
 
 uint8_t buffer[128];
 char data[250];
@@ -59,7 +78,7 @@ MQ135 gasSensor = MQ135(ANALOGPIN);
 /* Valor de gas */
 float ppm;
 /* Valor de luz ambiente */
-unsigned int AnalogValue;
+unsigned int luz;
 
 
 /* Funciones de sensado */
@@ -71,7 +90,7 @@ void mq135_sensar(void);
 
 void setup()
 {
-    
+  http=true;
   // initialize serial for debugging
   Serial.begin(9600);
   // initialize serial for ESP module
@@ -101,19 +120,18 @@ void setup()
 
   Serial.println();
   Serial.println("Starting connection to server...");
-  // if you get a connection, report back via serial
-  if (client.connect(server, 8888)) {
-    Serial.println("Connected to server");
-    // Make a HTTP request
-    //client.print("GET /valores HTTP/1.1\r\nHost: 192.168.0.3\r\n\r\n");
-    
-    int luz=16;
-    int gas=18;
-    sprintf(data, "%s%d%s%s%s%s", "POST /insertar HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\ncache-control: no-cache\r\nAccept: */*\r\nHost: 192.168.0.10:8888\r\naccept-encoding: gzip, deflate\r\ncontent-length: ",((String("\nco2" + (String)gas+"&luz="+(String)luz)).length()),"\r\nConnection: keep-alive\r\n\r\nco2=",((String)gas).c_str(),"&luz=",((String)luz).c_str());
-    client.print(data);
+    // if you get a connection, report back via serial
+    if (client.connect(server, 8888)) {
+      Serial.println("Connected to server");
+      // Make a HTTP request
+      //client.print("GET /valores HTTP/1.1\r\nHost: 192.168.0.3\r\n\r\n");
 
-    
-  }  
+    //connect to MQTT server
+    mqttClient.setServer("192.168.0.3", 1883);
+    mqttClient.setCallback(callback);
+      
+    } 
+  
   
 
 }
@@ -123,28 +141,32 @@ void loop()
 {
 
     mq135_sensar();
-    AnalogValue = analogRead(A0);
-    Serial.println(AnalogValue);
+    luz = analogRead(A0);
+    Serial.println(luz);
 
 
-    
+    if(http){
+        if (client.connect(server, 8888)) {
+        Serial.println("Connected to server");
+        sprintf(data, "%s%d%s%s%s%s", "POST /insertar HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\ncache-control: no-cache\r\nAccept: */*\r\nHost: 192.168.0.10:8888\r\naccept-encoding: gzip, deflate\r\ncontent-length: ",((String("\nco2" + (String)ppm+"&luz="+(String)luz)).length()),"\r\nConnection: keep-alive\r\n\r\nco2=",((String)ppm).c_str(),"&luz=",((String)luz).c_str());
+        client.print(data);
+        // if there are incoming bytes available
+        // from the server, read them and print them
+        while (client.available()) {
+          char c = client.read();
+          Serial.write(c);
+        }
+        client.stop();
+      }
+    }
+    else {
+      reconnect();
+      mqttClient.loop();
+    }
+    delay(10000);
 
-   // if there are incoming bytes available
-  // from the server, read them and print them
-  while (client.available()) {
-    char c = client.read();
-    Serial.write(c);
-  }
 
-  // if the server's disconnected, stop the client
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("Disconnecting from server...");
-    client.stop();
 
-    // do nothing forevermore
-    while (true);
-  }
 }
 
 
@@ -173,4 +195,27 @@ void printWifiStatus()
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!mqttClient.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect, just a name to identify the client
+    if (mqttClient.connect("NANO")) {
+    Serial.println("connected");
+    // Once connected, publish an announcement...
+    //client.publish("outpic","Hello World");
+    // ... and resubscribe
+      Serial.print("Cliente suscrito a topico");
+      mqttClient.subscribe("esp/test");
+    
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
 }
