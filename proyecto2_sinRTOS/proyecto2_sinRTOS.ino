@@ -90,7 +90,7 @@ void mq135_sensar(void);
 
 void setup()
 {
-  http=true;
+  http=false;
   // initialize serial for debugging
   Serial.begin(9600);
   // initialize serial for ESP module
@@ -162,8 +162,10 @@ void loop()
     else {
       reconnect();
       mqttClient.loop();
+      mqttClient.publish("/topic1","1");
+
     }
-    delay(10000);
+    delay(1000);
 
 
 
@@ -205,10 +207,10 @@ void reconnect() {
     if (mqttClient.connect("NANO")) {
     Serial.println("connected");
     // Once connected, publish an announcement...
-    //client.publish("outpic","Hello World");
+    //mqttClient.publish("outpic","Hello World");
     // ... and resubscribe
       Serial.print("Cliente suscrito a topico");
-      mqttClient.subscribe("esp/test");
+      mqttClient.subscribe("/topic1");
     
     } else {
       Serial.print("failed, rc=");
