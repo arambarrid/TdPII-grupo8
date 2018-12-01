@@ -42,12 +42,11 @@ char ssid[] = "elPityMartinez";            // your network SSID (name)
 char pass[] = "loquisimo";        // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-char server[] = "192.168.0.3";
+char server[] = "192.168.4.2";
 boolean http;
 // Initialize the Ethernet client object
 WiFiEspClient client;
 WiFiEspClient espClient;
-WiFiEspServer server2(80);
 void printWifiStatus();
 void reconnect();
 #define ANALOGPIN A1
@@ -125,20 +124,17 @@ void setup()
   Serial.println("You're connected to the network");
   
   printWifiStatus();
-  // start the web server on port 80
-  server2.begin();
-  Serial.println("Server started");
-  Serial.println();
+
   
   Serial.println("Starting connection to server...");
     // if you get a connection, report back via serial
-    if (client.connect("192.168.4.1", 8888)) {
+    if (client.connect("192.168.4.2", 8888)) {
       Serial.println("Connected to server");
       // Make a HTTP request
-      //client.print("GET /valores HTTP/1.1\r\nHost: 192.168.0.3\r\n\r\n");
+      //client.print("GET /valores HTTP/1.1\r\nHost: 192.168.4.3\r\n\r\n");
   
     //connect to MQTT server
-    //mqttClient.setServer("192.168.0.3", 1883);
+    //mqttClient.setServer("192.168.4.3", 1883);
     //mqttClient.setCallback(callback);
    
     } 
@@ -151,13 +147,11 @@ void setup()
 void loop()
 {
 
-    client = server2.available();  // listen for incoming clients
-    Serial.println("Starting connection to server...");
     // if you get a connection, report back via serial
-    if (client.connect("192.168.4.1", 8888)) {
+    if (client.connect("192.168.4.2", 8888)) {
       Serial.println("Connected to server");
       // Make a HTTP request
-      //client.print("GET /valores HTTP/1.1\r\nHost: 192.168.0.3\r\n\r\n");
+      client.print("GET /valores HTTP/1.1\r\nHost: 192.168.4.2\r\n\r\n");
     }
     Serial.println("Status = %d\n" + WiFi.status());
 
@@ -167,9 +161,9 @@ void loop()
 
   
     if(http){
-        if (client.connect("192.168.4.1", 8888)) {
+        if (client.connect("192.168.4.2", 8888)) {
         Serial.println("Connected to server");
-        //sprintf(data, "%s%d%s%s%s%s", "POST /insertar HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\ncache-control: no-cache\r\nAccept: */*\r\nHost: 192.168.4.1:8888\r\naccept-encoding: gzip, deflate\r\ncontent-length: ",((String("\nco2" + (String)ppm+"&luz="+(String)luz)).length()),"\r\nConnection: keep-alive\r\n\r\nco2=",((String)ppm).c_str(),"&luz=",((String)luz).c_str());
+        sprintf(data, "%s%d%s%s%s%s", "POST /insertar HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\ncache-control: no-cache\r\nAccept: */*\r\nHost: 192.168.4.2:8888\r\naccept-encoding: gzip, deflate\r\ncontent-length: ",((String("\nco2" + (String)ppm+"&luz="+(String)luz)).length()),"\r\nConnection: keep-alive\r\n\r\nco2=",((String)ppm).c_str(),"&luz=",((String)luz).c_str());
         client.print(data);
         // if there are incoming bytes available
         // from the server, read them and print them
