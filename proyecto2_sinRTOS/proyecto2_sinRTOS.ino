@@ -12,11 +12,11 @@
 SoftwareSerial Serial1(3, 2); // RX, TX
 #endif
 
-char ssid[] = "d.A";            // your network SSID (name)
-char pass[] = "223530145522";        // your network password
+char ssid[] = "Proyecto8";            // your network SSID (name)
+char pass[] = "arambarrimaxit";        // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-char server[] = "192.168.0.3";
+char server[] = "192.168.4.2";
 boolean http;
 unsigned int estado;
 unsigned int muestreo;
@@ -41,8 +41,8 @@ PubSubClient mqttClient(espClient);
 
 void setup()
 {
-  http=false;
-  estado=2;
+  http=true;
+  estado=0;
   muestreo=5000;
   // initialize serial for debugging
   Serial.begin(9600);
@@ -58,12 +58,34 @@ void setup()
     while (true);
   }
 
+/* Configuracion sin AP */ 
+/*
   // attempt to connect to WiFi network
   while ( status != WL_CONNECTED) {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network
     status = WiFi.begin(ssid, pass);
   }  
+
+/* Configuracion sin AP */ 
+
+
+/* Configuracion con AP*/
+
+  // attempt to connect to WiFi network
+  while ( status != WL_CONNECTED) {
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network
+    status = WiFi.beginAP(ssid, 10, pass, ENC_TYPE_WPA2_PSK);
+  } 
+
+  // uncomment these two lines if you want to set the IP address of the AP
+  //IPAddress localIp(192, 168, 0, 5);
+  //WiFi.configAP(localIp);
+  
+
+  Serial.println("Access point started");
+/* Configuracion con AP*/
   printWifiStatus();
   Serial.println(F("Starting connection to server..."));
     // if you get a connection, report back via serial
