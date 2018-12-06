@@ -142,6 +142,7 @@ void loop()
     delay(1000);
     tiempo2=millis(); 
     tMuestreo=tMuestreo+(tiempo2-tiempo1);
+    reconnect();
 
 }
 
@@ -172,9 +173,6 @@ void reconnect() {
       tiempoConnMQTT=tiempo2-tiempo1;
       Serial.println(tiempoConnMQTT);
       /*----MEDICION DE TIEMPOS----*/
-      Serial.print(F("Cliente suscrito a topico"));
-      mqttClient.subscribe("estado");
-      mqttClient.subscribe("muestreo");
     } else {
       Serial.print(F("failed, rc="));
       Serial.print(mqttClient.state());
@@ -213,9 +211,9 @@ void rafagaHTTP(void){
     }
     client.stop();
   }        
-  for (int i=1; i <= 9; i++){
-    ppm = gasSensor.getPPM() * 100;
-    luz = analogRead(A0);
+  for (int i=1; i <= 24; i++){
+    ppm = 50;
+    luz = 60;
      if (client.connect(server, 8888)) {
         sprintf(data, "%s%d%s%s%s%s", "POST /insertar HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\ncache-control: no-cache\r\nAccept: /\r\nHost: 192.168.0.10:8888\r\naccept-encoding: gzip, deflate\r\ncontent-length: ",((String("\nco2" + (String)ppm+"&luz="+(String)luz)).length()),"\r\nConnection: keep-alive\r\n\r\nco2=",((String)ppm).c_str(),"&luz=",((String)luz).c_str());
         client.print(data);
@@ -240,16 +238,16 @@ void rafagaHTTP(void){
 }
 
 void rafagaMQTT(void){
-  mqttClient.loop();
+  //mqttClient.loop();
   mqttClient.publish("datos","0,2");
-  for (int i=1; i <= 9; i++){
-    ppm =  gasSensor.getPPM() * 100;
-    luz = analogRead(A0);
-    mqttClient.loop();
+  for (int i=1; i <= 24; i++){
+    ppm =  50;
+    luz = 60;
+    //mqttClient.loop();
     sprintf(data, "%s%s%s", String(ppm).c_str(), ",", String(luz).c_str());
     mqttClient.publish("datos",data);
   }     
-  mqttClient.loop();
+  //mqttClient.loop();
   mqttClient.publish("datos","2,0");
 }
 
