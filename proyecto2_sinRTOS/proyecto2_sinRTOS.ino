@@ -7,11 +7,11 @@
 #include "ArduinoJson.h" 
 #define ANALOGPIN A1
 
-char ssid[] = "FDG";            // your network SSID (name)
-char pass[] = "loquito123__";        // your network password
+char ssid[] = "Proyecto8";            // your network SSID (name)
+char pass[] = "arambarrimaxit";        // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-char server[] = "192.168.0.10";
+char server[] = "192.168.4.2";
 unsigned int estado;
 unsigned int muestreo;
 unsigned int tMuestreo;
@@ -56,12 +56,28 @@ void setup()
     while (true);
   }
 
+ /* Configuracion sin AP */ 
+/*
   // attempt to connect to WiFi network
   while ( status != WL_CONNECTED) {
     Serial.println(ssid);
     // Connect to WPA/WPA2 network
     status = WiFi.begin(ssid, pass);
   }  
+ /* Configuracion sin AP */ 
+ /* Configuracion con AP*/
+   // attempt to connect to WiFi network
+  while ( status != WL_CONNECTED) {
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network
+    status = WiFi.beginAP(ssid, 10, pass, ENC_TYPE_WPA2_PSK);
+  } 
+   // uncomment these two lines if you want to set the IP address of the AP
+  //IPAddress localIp(192, 168, 0, 5);
+  //WiFi.configAP(localIp);
+  
+   Serial.println("Access point started");
+/* Configuracion con AP*/
   printWifiStatus();
   Serial.println(F("Starting connection to server..."));
     // if you get a connection, report back via serial
@@ -70,6 +86,7 @@ void setup()
     if (client.connect(server, 8888)) {
       unsigned long tiempo2=millis();
       tiempoConnHTTP=tiempo2-tiempo1;
+      Serial.print("Tiempo de conexion HTTP: ");
       Serial.println(tiempoConnHTTP);
       /*----MEDICION DE TIEMPOS----*/
       Serial.println(F("Connected to server"));
@@ -101,17 +118,16 @@ void loop()
        while(!client.available());
       while(client.available()) {
         String line = client.readString();
-        Serial.print("Valores");
-        Serial.print(line);
         json=line;
         if(json.length()>0){
-          Serial.println("from server: "+json);        
           const size_t bufferSize = JSON_ARRAY_SIZE(2) + 3*JSON_OBJECT_SIZE(2);
           DynamicJsonBuffer jsonBuffer(bufferSize);
           JsonObject& root = jsonBuffer.parseObject(json);
           estado = root.get<int>("protocolo_medicion"); 
           muestreo = root.get<int>("periodo_sensado") * 1000; 
+          Serial.print("------ESTADO ACTUAL------: ");
           Serial.println(estado); 
+          Serial.print("------PERIODO DE MUESTREO ACTUAL------: ");
           Serial.println(muestreo);             
         }
 
@@ -120,22 +136,24 @@ void loop()
     } 
     switch(estado){
       case 0:
-        Serial.print("Tiempo de muestreo");
-        Serial.println(tMuestreo);
         if(tMuestreo>=muestreo){
-          Serial.println("Sensado");
+          Serial.println("-----SENSADO-----");
           sensado();
           tMuestreo=0;
         }
         break;
       case 1:  
-        Serial.println("Metrica HTTP");
+        Serial.println("-----Métrica HTTP-----");
+        Serial.println("-----Comienzo ráfaga HTTP-----");
         rafagaHTTP();
+        Serial.println("-----Fin ráfaga HTTP-----");
         estado=0;
         break;
       case 2:
-        Serial.println("Metrica MQTT");
+        Serial.println("-----Métrica MQTT-----");
+        Serial.println("-----Comienzo ráfaga MQTT-----");
         rafagaMQTT();
+        Serial.println("-----Fin ráfaga MQTT-----");
         estado=0;
         break;
     }
@@ -171,6 +189,7 @@ void reconnect() {
     if (mqttClient.connect("NANO")) {
       unsigned long tiempo2=millis();
       tiempoConnMQTT=tiempo2-tiempo1;
+      Serial.print("Tiempo de conexion MQTT: ");
       Serial.println(tiempoConnMQTT);
       /*----MEDICION DE TIEMPOS----*/
     } else {
@@ -211,7 +230,7 @@ void rafagaHTTP(void){
     }
     client.stop();
   }        
-  for (int i=1; i <= 24; i++){
+  for (int i=1; i <= 29; i++){
     ppm = 50;
     luz = 60;
      if (client.connect(server, 8888)) {
@@ -240,7 +259,7 @@ void rafagaHTTP(void){
 void rafagaMQTT(void){
   //mqttClient.loop();
   mqttClient.publish("datos","0,2");
-  for (int i=1; i <= 24; i++){
+  for (int i=1; i <= 29; i++){
     ppm =  50;
     luz = 60;
     //mqttClient.loop();
