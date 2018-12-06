@@ -28,17 +28,13 @@ and that both those copyright notices and this permission notice appear in suppo
 #include <WiFiEspClient.h>
 #include <WiFiEspUdp.h>
 #include <PubSubClient.h>
-// Emulate Serial1 on pins 3/2 if not present
-#ifndef HAVE_HWSERIAL1
-#include "SoftwareSerial.h"
-SoftwareSerial Serial1(3, 2); // RX, TX
-#endif
 
-char ssid[] = "Macri Hetero";            // your network SSID (name)
-char pass[] = "ATRACTIVIDADES";        // your network password
+
+char ssid[] = "FDG";            // your network SSID (name)
+char pass[] = "loquito123__";        // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
-char server[] = "192.168.1.30";
+char server[] = "192.168.0.23";
 boolean http;
 int estado;
 // Initialize the Ethernet client object
